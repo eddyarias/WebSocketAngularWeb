@@ -1,0 +1,52 @@
+<div class="header">
+  <h1>Cliente usando websockets</h1>
+</div>
+<div class="container-fluid">
+    <div class="row">
+      <!-- Sección de la cámara a la izquierda -->
+      <div class="col-md-8">
+        <div class="camera-box position-relative">
+          <video autoplay playsinline class="w-100"></video>
+          <canvas class="bounding-box-canvas position-absolute w-100 h-100"></canvas>
+        </div>
+      </div>
+      
+  
+      <!-- Sección de métricas a la derecha -->
+      <div class="col-md-4">
+        <div class="metrics-box">
+          <div class="card mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Orientación</h5>
+              <p class="card-text" id="orientation">N/A</p>
+            </div>
+          </div>
+          <div class="card mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Distancia</h5>
+              <p class="card-text" id="text4User">N/A</p>
+            </div>
+          </div>
+          <div class="card mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Factor de Distancia</h5>
+              <p class="card-text" id="textFacDis">N/A</p>
+            </div>
+          </div>
+          <div class="card mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Bounding Box</h5>
+              <p class="card-text" id="boundingBoxInfo">N/A</p>
+            </div>
+          </div>
+          <div class="card mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Latencia</h5>
+              <p class="card-text" id="latency">N/A</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <canvas class="d-none"></canvas> 

@@ -1,0 +1,60 @@
+/* Encabezado */
+.header {
+  background-color: #007bff;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Caja de la cámara */
+.camera-box {
+  position: relative;
+  padding: 10px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.bounding-box-canvas {
+  top: 0;
+  left: 0;
+  pointer-events: none; /* Esto asegura que los eventos de mouse pasen a través del canvas */
+}
+
+
+/* Estilo de las tarjetas de métricas */
+.metrics-box .card {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+.metrics-box .card-title {
+  font-weight: bold;
+  color: #007bff;
+}
+
+.metrics-box .card-text {
+  font-size: 1.2rem;
+  color: #333;
+}
+
+/* Botón de sombra */
+.shadow-sm {
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Diseño de la página */
+.container-fluid {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Espaciado para las métricas */
+.metrics-box .card-body {
+  padding: 20px;
+}
