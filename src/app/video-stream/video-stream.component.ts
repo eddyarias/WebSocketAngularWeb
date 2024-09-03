@@ -45,7 +45,9 @@ export class VideoStreamComponent implements OnInit, OnDestroy {
   }
   
   private connectWebSocket(): void {
-    this.websocketService.connect('ws://13.51.158.147:5000');
+    this.websocketService.connect('ws://13.60.205.186:5000');
+    // this.websocketService.connect('ws://13.51.158.147:5000');
+    // this.websocketService.connect('ws://13.48.194.124:5000');
     this.websocketService.getMessages().subscribe({
       next: data => this.receiveBoundingBox(data),
       error: err => this.handleWebSocketError(err),
