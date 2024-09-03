@@ -1,5 +1,4 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-
 import { WebsocketService } from '../websocket.service';
 import { interval, Subscription } from 'rxjs';
 
@@ -19,6 +18,8 @@ export class VideoStreamComponent implements OnInit, OnDestroy {
   private fps: number = 30; // Frames per second (adjustable)
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
+
+  public cameraMetadata: any = {}; // Para almacenar los metadatos de la cámara
 
   constructor(private websocketService: WebsocketService) {}
 
@@ -42,8 +43,7 @@ export class VideoStreamComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.cleanupResources();
   }
- 
-
+  
   private connectWebSocket(): void {
     this.websocketService.connect('ws://13.51.158.147:5000');
     this.websocketService.getMessages().subscribe({
@@ -74,11 +74,17 @@ export class VideoStreamComponent implements OnInit, OnDestroy {
   }
 
   private startVideoStream(): void {
-    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+    navigator.mediaDevices.getUserMedia({ video: {
+      width: { ideal: 1920 },  // Ancho ideal
+      height: { ideal: 1080 }, // Alto ideal
+      frameRate: { ideal: 30 }, // Tasa de fotogramas ideal
+      facingMode: 'user'        // Puedes cambiar esto a 'environment' para la cámara trasera
+    } }).then(stream => {
       if (this.videoElement) {
         this.videoElement.srcObject = stream;
       }
       this.captureFrames();
+      this.extractCameraMetadata(stream);
     }).catch(err => {
       console.error('Error accessing video stream:', err);
     });
@@ -87,27 +93,19 @@ export class VideoStreamComponent implements OnInit, OnDestroy {
   private captureFrames(): void {
     this.captureInterval = interval(1000 / this.fps).subscribe(() => {
       if (this.videoElement && this.context) {
-              // Obtén las dimensiones originales del video
-      const originalWidth = this.videoElement.videoWidth;
-      const originalHeight = this.videoElement.videoHeight;
-
-      // Establece las nuevas dimensiones deseadas para reducir la resolución
-      const targetWidth = 320;  // Ancho deseado para la imagen
-      const targetHeight = (originalHeight / originalWidth) * targetWidth; // Mantiene la relación de aspecto
-
-      // Ajusta el tamaño del canvas para coincidir con las dimensiones deseadas
-      this.canvasElement!.width = targetWidth;
-      this.canvasElement!.height = targetHeight;
-
-      // Dibuja el video redimensionado en el canvas
-      this.context.drawImage(this.videoElement, 0, 0, targetWidth, targetHeight);
+        const originalWidth = this.videoElement.videoWidth;
+        const originalHeight = this.videoElement.videoHeight;
+        const targetWidth = 330;  // Ancho deseado para la imagen
+        const targetHeight = (originalHeight / originalWidth) * targetWidth; // Mantiene la relación de aspecto
+        this.canvasElement!.width = targetWidth;
+        this.canvasElement!.height = targetHeight;
+        this.context.drawImage(this.videoElement, 0, 0, targetWidth, targetHeight);
         const frame = this.canvasElement?.toDataURL('image/jpeg', 0.4).split(',')[1];
         this.startTime = performance.now();
         this.websocketService.send({ frame });
       }
     });
   }
-  
 
   private receiveBoundingBox(data: any): void {
     this.bbox = data;
@@ -118,32 +116,12 @@ export class VideoStreamComponent implements OnInit, OnDestroy {
     this.adjustFpsBasedOnLatency();
   }
 
-  
   private drawBoundingBox(): void {
     if (this.bbox && this.context && this.canvasElement && this.videoElement) {
       const { x, y, w, h, colorRectangle } = this.bbox;
-  
-      // Ajusta el tamaño del canvas para que coincida con el tamaño del video
-      this.canvasElement.width = this.videoElement.clientWidth;
-      this.canvasElement.height = this.videoElement.clientHeight;
-  
-      // Limpia el canvas antes de dibujar
-      this.context.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-  
-      // Establece el factor de escala basado en las dimensiones del video y el canvas
-      const scaleX = this.canvasElement.width / this.videoElement.videoWidth;
-      const scaleY = this.canvasElement.height / this.videoElement.videoHeight;
-  
-      // Escala las coordenadas del bounding box para ajustarse al tamaño redimensionado del canvas
-      const scaledX = x * scaleX;
-      const scaledY = y * scaleY;
-      const scaledW = w * scaleX;
-      const scaledH = h * scaleY;
-  
-      // Dibuja el bounding box redimensionado
       this.context.strokeStyle = `rgb(${colorRectangle[0]}, ${colorRectangle[1]}, ${colorRectangle[2]})`;
       this.context.lineWidth = 2;
-      this.context.strokeRect(scaledX, scaledY, scaledW, scaledH);
+      this.context.strokeRect(x, y, w, h);
     }
   }
 
@@ -156,6 +134,7 @@ export class VideoStreamComponent implements OnInit, OnDestroy {
       const textFacDisElement = document.getElementById('textFacDis');
       const latencyElement = document.getElementById('latency');
       const boundingBoxInfoElement = document.getElementById('boundingBoxInfo');
+      const cameraMetadataElement = document.getElementById('cameraMetadata');
   
       if (orientationElement) orientationElement.textContent = orientation || 'N/A';
       if (text4UserElement) text4UserElement.textContent = text4User || 'N/A';
@@ -171,6 +150,36 @@ export class VideoStreamComponent implements OnInit, OnDestroy {
       if (boundingBoxInfoElement) {
         boundingBoxInfoElement.textContent = `x: ${x}, y: ${y}, width: ${w}, height: ${h}`;
       }
+
+      if (cameraMetadataElement) {
+        cameraMetadataElement.textContent = `Resolution: ${this.cameraMetadata.width}x${this.cameraMetadata.height}, 
+                                              Frame Rate: ${this.cameraMetadata.frameRate}, 
+                                              Device ID: ${this.cameraMetadata.deviceId}, 
+                                              Label: ${this.cameraMetadata.label}`;
+      }
+    }
+  }
+
+  private extractCameraMetadata(stream: MediaStream): void {
+    const videoTrack = stream.getVideoTracks()[0];
+    const capabilities = videoTrack.getCapabilities();
+    const settings = videoTrack.getSettings();
+  
+    this.cameraMetadata = {
+      width: settings.width || capabilities.width?.max || 'N/A',
+      height: settings.height || capabilities.height?.max || 'N/A',
+      frameRate: settings.frameRate || capabilities.frameRate?.max || 'N/A',
+      deviceId: settings.deviceId || 'N/A',
+      label: videoTrack.label || 'N/A'
+    };
+    
+    // Mostrar los metadatos en la consola en formato JSON (opcional)
+    console.log('Camera Metadata:', JSON.stringify(this.cameraMetadata, null, 2));
+    
+    // Mostrar los metadatos en el HTML
+    const cameraMetadataElement = document.getElementById('cameraMetadata');
+    if (cameraMetadataElement) {
+      cameraMetadataElement.textContent = JSON.stringify(this.cameraMetadata, null, 2);
     }
   }
   
